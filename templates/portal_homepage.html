@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <title>Nepal News Archive</title>
+    <style>
+        .news-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+            gap: 24px;
+            max-width: 1200px;
+            margin: 0 auto 60px;
+            padding: 0 24px;
+        }
+        .card {
+            background: #fff;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,.09);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.18s, box-shadow 0.22s;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 28px rgba(0,0,0,.14);
+        }
+
+        .card-img {
+            width: 100%;
+            height: 160px;
+            object-fit: cover;
+            background: #e0e4ed;
+        }
+
+        .card-no-img {
+            height: 160px;
+            background: linear-gradient(135deg, #e8ebf3, #d4d9e4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #888;
+            font-size: 0.85rem;
+        }
+
+        .card-body {
+            padding: 14px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex-grow: 1;
+        }
+
+        .portal-tag {
+            font-weight: 600;
+            color: #1a5bb8;
+        }
+
+        .lang-tag {
+            font-weight: bold;
+            padding: 1px 6px;
+            border-radius: 3px;
+        }
+
+
+        .card-title a {
+            color: #0d1b2a;
+            text-decoration: none;
+            font-size: 1.08rem;
+            line-height: 1.32;
+            font-weight: 600;
+        }
+
+        .card-title a:hover {
+            color: #1a5bb8;
+            text-decoration: underline;
+        }
+
+        .tab-btn.active {
+            background: #1a5bb8;
+            color: white;
+            border-color: #1a5bb8;
+        }
+        .tab-panel {
+            display: none;
+        }
+        .tab-panel.active {
+            display: block;
+        }
+        .summary {
+            margin: 0;
+            font-size: 0.94rem;
+            line-height: 1.45;
+            color: #333;
+        }
+        .no-summary {
+            color: #777;
+            font-style: italic;
+            font-size: 0.9rem;
+        }
+        .card-keywords {
+            font-size: 0.86rem;
+            color: #555;
+            margin-top: 6px;
+        }
+
+    </style>
+</head>
+<body>
+
+<nav>
+    <a class="nav-brand" href="/portals">Nepal News Archive</a>
+    <div >
+            <a href="/portals">Portals</a>
+            <a href="/papers">E-Papers</a>
+            <a href="/socials">Socials</a>
+        </div>
+        <hr>
+    <form method="GET" action="/portals">
+        <input type="date" name="date" value="{{ selected_date }}" max="{{ today }}">
+        <select name="portal">
+            <option value="">All Portals</option>
+            {% for key, name in portals.items() %}
+                <option value="{{ key }}" {% if selected_portal == key %}selected{% endif %}>
+                    {{ name }}
+                </option>
+            {% endfor %}
+        </select>
+        <select name="lang">
+            <option value=""   {% if selected_lang == ''   %}selected{% endif %}>All Languages</option>
+            <option value="np" {% if selected_lang == 'np' %}selected{% endif %}>नेपाली</option>
+            <option value="en" {% if selected_lang == 'en' %}selected{% endif %}>English</option>
+        </select>
+        <input type="search" name="q" placeholder="Search headlines…" value="{{ search_query }}">
+        <button class="btn-filter" type="submit">Filter</button>
+        <a class="btn-reset" href="/portals">Reset</a>
+    </form>
+</nav>
+
+<hr>
+<div class="page-header">
+    <h2>Headlines — {{ selected_date }}</h2>
+    {% if selected_portal and portals[selected_portal] %}
+        <span class="pill">{{ portals[selected_portal] }}</span>
+    {% endif %}
+    {% if selected_lang %}
+        <span class="pill">{{ 'नेपाली' if selected_lang == 'np' else 'English' }}</span>
+    {% endif %}
+    {% if search_query %}
+        <span class="pill">"{{ search_query }}"</span>
+    {% endif %}
+    <span class="result-count">
+        {{ rows|length }} result{{ 's' if rows|length != 1 else '' }}
+    </span>
+</div>
+
+
+<div class="news-grid">
+{% if rows %}
+    {% for row in rows %}
+    <div class="card">
+        <!-- Thumbnail -->
+        {% if row.thumbnail_filename %}
+            <img class="card-img"
+                 src="/portals/thumbnails/{{ row.thumbnail_filename }}"
+                 alt="{{ row.portal_name }} thumbnail"
+                 loading="lazy">
+        {% else %}
+            <div class="card-no-img">No thumbnail</div>
+        {% endif %}
+
+        <div class="card-body">
+            <!-- Meta -->
+            <div class="card-meta">
+                <span class="portal-tag">{{ row.portal_name }}</span>
+                <span class="lang-tag lang-{{ row.language }}">
+                    {{ 'नेपाली' if row.language == 'np' else 'EN' }}
+                </span>
+                <span class="card-time">
+                    {{ row.scrape_datetime[:19].replace('T', ' ') }}
+                </span>
+            </div>
+
+            <!-- Title -->
+            <div class="card-title">
+                <a href="{{ row.article_url }}" target="_blank" rel="noopener">
+                    {{ row.title if row.title else (row.portal_name ~ ' → Article') }}
+                </a>
+            </div>
+
+            <div>
+                <div class="tab-buttons">
+                    <button class="tab-btn active"
+                            onclick="switchTab('{{ loop.index }}', 'en', this)">English</button>
+                    <button class="tab-btn"
+                            onclick="switchTab('{{ loop.index }}', 'np', this)">नेपाली</button>
+                </div>
+
+                <div class="tab-panel active" id="tab-{{ loop.index }}-en">
+                    {% if row.summary_en %}
+                        <p class="summary">{{ row.summary_en }}</p>
+                    {% else %}
+                        <p class="no-summary">No English summary available.</p>
+                    {% endif %}
+                </div>
+
+                <div class="tab-panel" id="tab-{{ loop.index }}-np">
+                    {% if row.summary_np %}
+                        <p class="summary">{{ row.summary_np }}</p>
+                    {% else %}
+                        <p class="no-summary">नेपाली सारांश उपलब्ध छैन।</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% set kw = row.keywords_en or row.keywords_np %}
+            {% if kw %}
+                <p class="card-keywords"><b>Keywords:</b> {{ kw }}</p>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="empty" style="grid-column: 1 / -1; text-align:center; padding:60px 20px; color:#666;">
+        <p style="font-size:1.4rem;">No headlines found for the selected filters.</p>
+    </div>
+{% endif %}
+</div>
+
+
+<script>
+
+function switchTab(idx, lang, btn) {
+
+    ['en', 'np'].forEach(function(l) {
+        var panel = document.getElementById('tab-' + idx + '-' + l);
+        if (panel) panel.classList.remove('active');
+    });
+
+    btn.parentElement.querySelectorAll('.tab-btn').forEach(function(b) {
+        b.classList.remove('active');
+    });
+
+    // Show selected
+    var selectedPanel = document.getElementById('tab-' + idx + '-' + lang);
+    if (selectedPanel) selectedPanel.classList.add('active');
+    btn.classList.add('active');
+}
+</script>
+
+</body>
+</html>

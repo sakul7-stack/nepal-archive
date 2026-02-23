@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nepal Social Archive</title>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacOSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8f9fa;
+            color: #16213e;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+
+        .social-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            max-width: 1080px;          
+            margin: 0 auto 60px;
+            padding: 0 24px;
+            justify-content: center;    
+        }
+        .social-card {
+            background: #fff;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.18s, box-shadow 0.18s;
+            max-width: 420px;         
+        }
+        .social-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 28px rgba(0,0,0,0.12);
+        }
+        .card-thumb-wrap {
+            width: 100%;
+            height: 180px;             
+            background: #dde0e8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .card-thumb-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .card-body {
+            padding: 16px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .card-link {
+      background: #0066cc;
+      color: white;
+      text-align: center;
+      padding: 10px;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <a href="/">Nepal Archive</a>
+        <div >
+            <a href="/portals">Portals</a>
+            <a href="/papers">E-Papers</a>
+            <a href="/socials">Socials</a>
+        </div>
+    </nav>
+    <hr>
+
+    <div class=>
+        <h2>Social Posts — {{ selected_date }}</h2>
+        {% if selected_platform and platforms.get(selected_platform) %}
+            <span >{{ platforms[selected_platform] }}</span>
+        {% endif %}
+        <span >{{ rows | length }} post{{ 's' if rows|length != 1 else '' }}</span>
+    </div>
+
+    <form method="GET" action="/socials">
+        <div>
+            <input type="date" name="date" value="{{ selected_date }}" max="{{ today }}">
+            <select name="platform">
+                <option value="">All platforms</option>
+                {% for pid, pname in platforms.items() %}
+                <option value="{{ pid }}" {% if selected_platform == pid %}selected{% endif %}>{{ pname }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit">Filter</button>
+            <button><a href="/socials" >Reset</a></button>
+        </div>
+    </form>
+
+
+    <div class="social-grid">
+        {% if rows %}
+            {% for row in rows %}
+            <div class="social-card">
+                <div class="card-thumb-wrap">
+                    {% if row['thumb_filename'] %}
+                    <img src="/socials/thumbnails/{{ row['thumb_filename'] }}" alt="thumbnail" loading="lazy">
+                    {% else %}
+                    <div class="no-thumb">No preview</div>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <div>{{ row['platform_name'] }}</div>
+                    <div class="card-title">{{ row['title'] or '—' }}</div>
+                    <div class="card-date">{{ row['archive_date'] }}</div>
+                </div>
+                {% if row['link'] %}
+                <a href="{{ row['link'] }}" target="_blank" class="card-link">Open Post</a>
+                {% endif %}
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <h3>No posts found</h3>
+                <p>Try changing the date or platform filter.</p>
+            </div>
+        {% endif %}
+    </div>
+
+</body>
+</html>

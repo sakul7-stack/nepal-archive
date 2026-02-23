@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nepal E-Paper Archive</title>
+  <style>
+    .grid {
+      padding: 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    @media (min-width: 800px) {
+      .grid {
+        grid-template-columns: repeat(3, 1fr);  
+      }
+    }
+
+    .card {
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+
+    .thumb {
+      width: 100%;
+      aspect-ratio: 2 / 3;
+      object-fit: contain;
+      background: #f8f8e8;
+    }
+
+
+    .card-body {
+      padding: 12px;
+      flex-grow: 1;
+    }
+
+    .title {
+      margin: 0 0 6px 0;
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .date {
+      color: #555;
+      font-size: 0.95rem;
+    }
+
+    .open-pdf {
+      background: #0066cc;
+      color: white;
+      text-align: center;
+      padding: 10px;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-brand">Nepal Archive</a>
+  <div class="nav-links">
+    <a href="/portals">Portals</a>
+    <a href="/papers" >E-Papers</a>
+    <a href="/socials">socials</a>
+  </div>
+  <hr>
+</nav>
+
+
+<form method="GET" action="/papers">
+  <div>
+    <div>
+      <label>Date</label>
+      <input type="date" name="date" value="{{ selected_date }}" max="{{ today }}">
+    </div>
+    <div>
+      <label>Language</label>
+      <select name="lang">
+        <option value="">All languages</option>
+        <option value="np" {% if selected_lang == 'np' %}selected{% endif %}>नेपाली</option>
+        <option value="en" {% if selected_lang == 'en' %}selected{% endif %}>English</option>
+      </select>
+    </div>
+    <div>
+      <label>Newspaper</label>
+      <select name="paper">
+        <option value="">All papers</option>
+        {% for key, pname in newspapers.items() %}
+        <option value="{{ key }}" {% if selected_paper == key %}selected{% endif %}>{{ pname }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <button type="submit">Filter</button>
+      <a href="/papers">Reset</a>
+    </div>
+  </div>
+</form>
+<hr>
+
+<div class="stats">
+  <span class="count">{{ rows | length }}</span>
+  e-paper{{ 's' if rows | length != 1 else '' }} found
+</div>
+
+<div class="grid">
+  {% if rows %}
+    {% for row in rows %}
+    <div class="card">
+      {% if row['thumb_filename'] %}
+        <img src="/papers/thumbnails/{{ row['thumb_filename'] }}" alt="Front page" loading="lazy">
+      {% else %}
+        <div>No preview</div>
+      {% endif %}
+      <div class="card-body">
+        <h3 class="title">{{ row['newspaper_name'] }}</h3>
+        <div class="date">{{ row['issue_date'] }}</div>
+      </div>
+      <a href="/papers/pdf/{{ row['pdf_filename'] }}" target="_blank" class="open-pdf">
+        Open PDF
+      </a>
+    </div>
+    {% endfor %}
+  {% else %}
+    <div>
+      <h3>No e-papers found</h3>
+      <p>Try different date or filters.</p>
+    </div>
+  {% endif %}
+</div>
+
+</body>
+</html>
