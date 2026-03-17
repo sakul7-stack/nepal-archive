@@ -1,9 +1,13 @@
 from flask import Flask, render_template, request, send_from_directory
 import sqlite3
-from datetime import datetime
+from datetime import datetime,timedelta
 import os
+from collections import defaultdict
+from flask_talisman import Talisman
+
 
 app = Flask(__name__)
+Talisman(app,force_https=False,content_security_policy=None)
 
 PORTAL_BASE_DIR  = os.path.dirname(os.path.abspath(__file__))
 PORTAL_DB_PATH   = os.path.join(PORTAL_BASE_DIR, "portal_archive", "database.db")
@@ -63,7 +67,70 @@ def serve_social_thumbnail(filename):
 
 @app.route('/')
 def homepage():
-    return render_template('homepage.html')
+    today = datetime.now().strftime('%Y-%m-%d')
+    current_year = datetime.now().year
+
+   
+    try:
+        requested_year = int(request.args.get('year', current_year))
+        if requested_year < 2000 or requested_year > current_year + 1:
+            requested_year = current_year
+    except (ValueError, TypeError):
+        requested_year = current_year
+
+    archive_info = defaultdict(dict)
+
+    
+    try:
+        conn = get_social_db()
+        rows = conn.execute(
+            "SELECT DISTINCT archive_date FROM archive_dates "
+            "WHERE archive_date LIKE ?",
+            (f"{requested_year}%",)
+        ).fetchall()
+        for r in rows:
+            archive_info[r[0]]['social'] = True
+        conn.close()
+    except:
+        pass
+
+  
+    try:
+        conn = get_portal_db()
+        rows = conn.execute(
+            "SELECT DISTINCT DATE(scrape_datetime) FROM headline_snapshots "
+            "WHERE DATE(scrape_datetime) LIKE ?",
+            (f"{requested_year}%",)
+        ).fetchall()
+        for r in rows:
+            archive_info[r[0]]['portal'] = True
+        conn.close()
+    except:
+        pass
+
+   
+    try:
+        conn = get_paper_db()
+        rows = conn.execute(
+            "SELECT DISTINCT issue_date FROM issues "
+            "WHERE issue_date LIKE ?",
+            (f"{requested_year}%",)
+        ).fetchall()
+        for r in rows:
+            archive_info[r[0]]['paper'] = True
+        conn.close()
+    except:
+        pass
+
+    return render_template(
+        'homepage.html',
+        today=today,
+        selected_year=requested_year,
+        current_year=current_year,
+        archive_data=archive_info
+    )
+
+
 
 
 @app.route('/socials')
@@ -75,7 +142,7 @@ def socials():
     platform_filter = request.args.get('platform', '').strip()
 
     if not date_str:
-        date_str = datetime.now().strftime('%Y-%m-%d')
+        date_str = (datetime.now()-timedelta(days=1)).strftime('%Y-%m-%d')
 
     platform_rows = c.execute(
         "SELECT platform_id, platform_name FROM platforms ORDER BY platform_name"
@@ -139,7 +206,7 @@ def papers():
     paper_key   = request.args.get('paper', '').strip()
 
     if not date_str:
-        date_str = datetime.now().strftime('%Y-%m-%d')
+        date_str = (datetime.now()-timedelta(days=1)).strftime('%Y-%m-%d')
 
     newspaper_rows = c.execute(
         "SELECT key, name, language FROM newspapers ORDER BY name"
@@ -208,7 +275,7 @@ def portals():
     lang_filter = request.args.get('lang', '').strip()  
 
     if not date_str:
-        date_str = datetime.now().strftime('%Y-%m-%d')
+        date_str = (datetime.now()-timedelta(days=1)).strftime('%Y-%m-%d')
 
     portal_rows = c.execute("""
         SELECT portal_key, portal_name, language
@@ -287,4 +354,4 @@ def portals():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0')
+    app.run(host='0.0.0.0',port=8001,debug=False)

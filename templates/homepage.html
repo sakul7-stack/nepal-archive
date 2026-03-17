@@ -4,19 +4,340 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
-  <title>Nepal News Archive</title>
+  <title>Nepal Media Archive</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      margin: 0;
+      padding: 12px 10px 20px;
+      background: #f9fbfd;
+      color: #222;
+      line-height: 1.35;
+    }
 
+    h1 {
+      text-align: center;
+      color: #1a3c5e;
+      margin: 12px 0 4px;
+      font-size: 1.9rem;
+    }
+
+    .intro {
+      text-align: center;
+      color: #555;
+      margin: 0 0 12px;
+      font-size: 0.95rem;
+    }
+
+    .legend {
+ 	 display: flex;
+  	justify-content: center;
+  	align-items: center;
+  	gap: 40px;               
+  	margin: 16px 0 24px;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.legend-item {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: all 0.15s;
+}
+
+.legend-item:hover {
+  color: #2980b9;
+  transform: translateY(-1px);
+}
+
+.legend-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+
+    .year-selector {
+      text-align: center;
+      margin: 10px 0 14px;
+      font-size: 1.1rem;
+    }
+
+    .year-selector button,
+    .year-selector select {
+      font-size: 0.9rem;
+      padding: 5px 10px;
+      margin: 0 6px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      background: white;
+      cursor: pointer;
+    }
+
+    .year-selector button:hover {
+      background: #f0f0f0;
+    }
+
+    .calendar-year {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #2c3e50;
+      margin: 6px 0 10px;
+      text-align: center;
+    }
+
+    .months-container {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px 10px;
+      max-width: 1180px;
+      margin: 0 auto;
+    }
+
+    .month {
+      text-align: center;
+    }
+
+    .month-name {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: #34495e;
+    }
+
+    .days {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
+      max-width: 100%;
+    }
+
+    .day {
+      aspect-ratio: 1 / 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      font-size: 0.74rem;
+      color: #333;
+    }
+
+    .day.empty {
+      visibility: hidden;
+    }
+
+    .day-number {
+      z-index: 2;
+      width: 22px;
+      height: 22px;
+      line-height: 22px;
+      border-radius: 50%;
+      position: relative;
+      font-weight: 500;
+      transition: all 0.12s ease;
+      cursor: pointer;
+    }
+
+    .circle {
+      position: absolute;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      pointer-events: auto;          
+      cursor: pointer;
+      opacity: 0.62;
+    }
+
+  
+    .has-paper:not(.has-multiple)  .circle.paper,
+    .has-portal:not(.has-multiple) .circle.portal,
+    .has-social:not(.has-multiple) .circle.social {
+      transform: none;
+    }
+
+    
+    .has-multiple .circle.paper  { transform: translate(-5px, -5px); background: #2ecc71; }
+    .has-multiple .circle.portal { transform: translate( 5px, -5px); background: #3498db; }
+    .has-multiple .circle.social { transform: translate( 0px,  6px); background: #e74c3c; }
+
+    .day.clickable:hover .day-number {
+      transform: scale(1.18);
+      box-shadow: 0 0 0 2px rgba(0,0,0,0.08);
+      background: rgba(255,255,255,0.8);
+    }
+
+    @media (max-width: 1100px) {
+      .months-container {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    @media (max-width: 780px) {
+      .months-container {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .day-number, .circle {
+        width: 20px;
+        height: 20px;
+        line-height: 20px;
+        font-size: 0.68rem;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .months-container {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
 <body>
-  <h1>Welcome to Nepal's Daily News Archive</h1>
-  <p>Access newspapers and e-paper portals easily with a single click.</p>
+  <h1>Nepal Media Archive</h1>
+  <p class="intro">Daily Archive of Nepal news sources</p>
 
-  <div class="button-container">
-    <ul>
-    <li><a href="/portals">News Portals</a><br></li>
-    <li><a href="/papers">Newspapers</a><br></li>
-    <li><a href="/socials">Social Media</a><br></li>
-    </ul>
+  <div class="legend">
+    <div class="legend-item" onclick="window.open('/papers', '_blank')">
+      <span class="legend-color" style="background:#2ecc71;"></span>Newspapers
+    </div>
+    <div class="legend-item" onclick="window.open('/portals', '_blank')">
+      <span class="legend-color" style="background:#3498db;"></span>Portals
+    </div>
+    <div class="legend-item" onclick="window.open('/socials', '_blank')">
+      <span class="legend-color" style="background:#e74c3c;"></span>Social Media
+    </div>
   </div>
+
+  <div class="year-selector">
+    <button onclick="prevYear()">« Prev</button>
+    <select id="yearSelect" onchange="changeYear(this.value)">
+      {% for y in range(current_year - 5, current_year + 2) %}
+        <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+      {% endfor %}
+    </select>
+    <button onclick="nextYear()">Next »</button>
+  </div>
+
+  <div class="calendar-year">{{ selected_year }}</div>
+
+  <div class="months-container" id="months"></div>
+
+  <script>
+    const archiveData = {{ archive_data | tojson | safe }};
+    const selectedYear = {{ selected_year }};
+    const currentYear  = {{ current_year }};
+
+    function changeYear(year) {
+      window.location.href = `/?year=${year}`;
+    }
+
+    function prevYear() {
+      if (selectedYear > currentYear - 10) changeYear(selectedYear - 1);
+    }
+
+    function nextYear() {
+      if (selectedYear < currentYear + 1) changeYear(selectedYear + 1);
+    }
+
+    const monthsContainer = document.getElementById("months");
+    const monthNames = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+
+    for (let m = 0; m < 12; m++) {
+      const monthDiv = document.createElement("div");
+      monthDiv.className = "month";
+
+      const title = document.createElement("div");
+      title.className = "month-name";
+      title.textContent = monthNames[m];
+      monthDiv.appendChild(title);
+
+      const daysGrid = document.createElement("div");
+      daysGrid.className = "days";
+
+      const first = new Date(selectedYear, m, 1);
+      const last  = new Date(selectedYear, m + 1, 0);
+      const startDay = first.getDay();
+
+      for (let i = 0; i < startDay; i++) {
+        const e = document.createElement("div");
+        e.className = "day empty";
+        daysGrid.appendChild(e);
+      }
+
+      for (let d = 1; d <= last.getDate(); d++) {
+        const dateStr = `${selectedYear}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        const info = archiveData[dateStr] || {};
+
+        const dayDiv = document.createElement("div");
+        dayDiv.className = "day";
+
+        const num = document.createElement("div");
+        num.className = "day-number";
+        num.textContent = d;
+
+        let tooltipParts = [];
+        let hasAny = false;
+
+        if (info.paper) {
+          hasAny = true;
+          const c = document.createElement("div");
+          c.className = "circle paper";
+          c.title = "Click to open Newspapers";
+          c.addEventListener("click", (e) => {
+            e.stopPropagation();
+            window.open(`/papers?date=${dateStr}`, '_blank');
+          });
+          num.appendChild(c);
+          tooltipParts.push("Newspapers");
+        }
+
+        if (info.portal) {
+          hasAny = true;
+          const c = document.createElement("div");
+          c.className = "circle portal";
+          c.title = "Click to open Portals";
+          c.addEventListener("click", (e) => {
+            e.stopPropagation();
+            window.open(`/portals?date=${dateStr}`, '_blank');
+          });
+          num.appendChild(c);
+          tooltipParts.push("Portals");
+        }
+
+        if (info.social) {
+          hasAny = true;
+          const c = document.createElement("div");
+          c.className = "circle social";
+          c.title = "Click to open Social Media";
+          c.addEventListener("click", (e) => {
+            e.stopPropagation();
+            window.open(`/socials?date=${dateStr}`, '_blank');
+          });
+          num.appendChild(c);
+          tooltipParts.push("Social Media");
+        }
+
+        if (hasAny) {
+          dayDiv.classList.add("clickable");
+          const typesCount = [info.paper, info.portal, info.social].filter(Boolean).length;
+          if (typesCount > 1) dayDiv.classList.add("has-multiple");
+
+          if (info.paper)  dayDiv.classList.add("has-paper");
+          if (info.portal) dayDiv.classList.add("has-portal");
+          if (info.social) dayDiv.classList.add("has-social");
+      }
+
+        if (tooltipParts.length > 0) {
+          num.title = tooltipParts.join(" • ") 
+        }
+
+        dayDiv.appendChild(num);
+        daysGrid.appendChild(dayDiv);
+      }
+
+      monthDiv.appendChild(daysGrid);
+      monthsContainer.appendChild(monthDiv);
+    }
+  </script>
 </body>
 </html>

@@ -14,15 +14,138 @@
             line-height: 1.6;
         }
 
+        /* ─── Shared Navbar + Filter ─────────────────────────────────────── */
+        .main-nav {
+            background: #ffffff;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 64px;
+        }
+        .nav-brand {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1a5bb8;
+            text-decoration: none;
+        }
+        .nav-links {
+            display: flex;
+            gap: 32px;
+        }
+        .nav-item {
+            color: #333;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        .nav-item:hover,
+        .nav-item.active {
+            color: #1a5bb8;
+        }
 
+        .filter-bar {
+            background: #f8f9fc;
+            border-bottom: 1px solid #e0e4ed;
+            padding: 16px 24px;
+        }
+        .filter-form {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            align-items: flex-end;
+        }
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            min-width: 140px;
+            flex: 1;
+        }
+        .filter-group label {
+            font-size: 0.85rem;
+            margin-bottom: 6px;
+            color: #555;
+            font-weight: 500;
+        }
+        .filter-group input,
+        .filter-group select {
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            background: white;
+        }
+        .filter-actions {
+            display: flex;
+            gap: 12px;
+            white-space: nowrap;
+        }
+        .btn {
+            padding: 10px 16px;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-primary {
+            background: #1a5bb8;
+            color: white;
+            border: none;
+        }
+        .btn-primary:hover { background: #144a99; }
+        .btn-reset {
+            background: #e5e7eb;
+            color: #374151;
+        }
+        .btn-reset:hover { background: #d1d5db; }
+
+        /* ─── Page header ────────────────────────────────────────────────── */
+        .page-header {
+            max-width: 1200px;
+            margin: 24px auto;
+            padding: 0 24px;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .page-header h2 {
+            margin: 0;
+            font-size: 1.8rem;
+        }
+        .pill {
+            background: #e0e7ff;
+            color: #1a5bb8;
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 0.9rem;
+        }
+        .result-count {
+            color: #555;
+            font-size: 1rem;
+        }
+
+        /* ─── Your existing social cards (unchanged) ─────────────────────── */
         .social-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 24px;
-            max-width: 1080px;          
+            max-width: 1080px;
             margin: 0 auto 60px;
             padding: 0 24px;
-            justify-content: center;    
+            justify-content: center;
         }
         .social-card {
             background: #fff;
@@ -32,7 +155,7 @@
             display: flex;
             flex-direction: column;
             transition: transform 0.18s, box-shadow 0.18s;
-            max-width: 420px;         
+            max-width: 420px;
         }
         .social-card:hover {
             transform: translateY(-4px);
@@ -40,7 +163,7 @@
         }
         .card-thumb-wrap {
             width: 100%;
-            height: 180px;             
+            height: 180px;
             background: #dde0e8;
             display: flex;
             align-items: center;
@@ -52,7 +175,6 @@
             height: 100%;
             object-fit: cover;
         }
-
         .card-body {
             padding: 16px;
             flex-grow: 1;
@@ -60,51 +182,98 @@
             flex-direction: column;
             gap: 8px;
         }
-
         .card-link {
-      background: #0066cc;
-      color: white;
-      text-align: center;
-      padding: 10px;
-      text-decoration: none;
-      font-weight: bold;
-    }
+            background: #0066cc;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .no-thumb {
+            color: #777;
+            font-style: italic;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+            grid-column: 1 / -1;
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            .nav-container {
+                flex-direction: column;
+                height: auto;
+                padding: 16px 20px;
+            }
+            .nav-links {
+                margin-top: 12px;
+                gap: 20px;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            .filter-form {
+                flex-direction: column;
+            }
+            .filter-group {
+                width: 100%;
+            }
+            .filter-actions {
+                width: 100%;
+                justify-content: stretch;
+            }
+            .btn {
+                flex: 1;
+            }
+        }
     </style>
 </head>
 <body>
 
-    <nav>
-        <a href="/">Nepal Archive</a>
-        <div >
-            <a href="/portals">Portals</a>
-            <a href="/papers">E-Papers</a>
-            <a href="/socials">Socials</a>
+    <nav class="main-nav">
+        <div class="nav-container">
+            <a href="/" class="nav-brand">Nepal Archive</a>
+            <div class="nav-links">
+                <a href="/portals" class="nav-item {% if request.path == '/portals' %}active{% endif %}">Portals</a>
+                <a href="/papers"  class="nav-item {% if request.path == '/papers' %}active{% endif %}">E-Papers</a>
+                <a href="/socials" class="nav-item {% if request.path == '/socials' %}active{% endif %}">Socials</a>
+            </div>
         </div>
     </nav>
-    <hr>
 
-    <div class=>
-        <h2>Social Posts — {{ selected_date }}</h2>
-        {% if selected_platform and platforms.get(selected_platform) %}
-            <span >{{ platforms[selected_platform] }}</span>
-        {% endif %}
-        <span >{{ rows | length }} post{{ 's' if rows|length != 1 else '' }}</span>
+    <div class="filter-bar">
+        <form method="GET" action="/socials" class="filter-form">
+            <div class="filter-group">
+                <label for="date">Date</label>
+                <input type="date" id="date" name="date" value="{{ selected_date }}" max="{{ today }}">
+            </div>
+
+            <div class="filter-group">
+                <label for="platform">Platform</label>
+                <select id="platform" name="platform">
+                    <option value="">All platforms</option>
+                    {% for pid, pname in platforms.items() %}
+                    <option value="{{ pid }}" {% if selected_platform == pid %}selected{% endif %}>{{ pname }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-actions">
+                <button type="submit" class="btn btn-primary">Filter</button>
+                <a href="/socials" class="btn btn-reset">Reset</a>
+            </div>
+        </form>
     </div>
 
-    <form method="GET" action="/socials">
-        <div>
-            <input type="date" name="date" value="{{ selected_date }}" max="{{ today }}">
-            <select name="platform">
-                <option value="">All platforms</option>
-                {% for pid, pname in platforms.items() %}
-                <option value="{{ pid }}" {% if selected_platform == pid %}selected{% endif %}>{{ pname }}</option>
-                {% endfor %}
-            </select>
-            <button type="submit">Filter</button>
-            <button><a href="/socials" >Reset</a></button>
-        </div>
-    </form>
-
+    <div class="page-header">
+        <h2>Social Posts — {{ selected_date }}</h2>
+        {% if selected_platform and platforms.get(selected_platform) %}
+            <span class="pill">{{ platforms[selected_platform] }}</span>
+        {% endif %}
+        <span class="result-count">{{ rows | length }} post{{ 's' if rows|length != 1 else '' }}</span>
+    </div>
 
     <div class="social-grid">
         {% if rows %}

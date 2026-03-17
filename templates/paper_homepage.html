@@ -4,56 +4,190 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Nepal E-Paper Archive</title>
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
   <style>
+    body {
+      font-family: -apple-system, BlinkMacOSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f8f9fa;
+      color: #16213e;
+      margin: 0;
+      line-height: 1.6;
+    }
+
+  
+    .main-nav {
+      background: #ffffff;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      height: 64px;
+    }
+    .nav-brand {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #1a5bb8;
+      text-decoration: none;
+    }
+    .nav-links {
+      display: flex;
+      gap: 32px;
+    }
+    .nav-item {
+      color: #333;
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    .nav-item:hover,
+    .nav-item.active {
+      color: #1a5bb8;
+    }
+
+    .filter-bar {
+      background: #f8f9fc;
+      border-bottom: 1px solid #e0e4ed;
+      padding: 16px 24px;
+    }
+    .filter-form {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: flex-end;
+    }
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      min-width: 160px;
+      flex: 1;
+    }
+    .filter-group label {
+      font-size: 0.85rem;
+      margin-bottom: 6px;
+      color: #555;
+      font-weight: 500;
+    }
+    .filter-group input,
+    .filter-group select {
+      padding: 10px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      background: white;
+    }
+    .filter-actions {
+      display: flex;
+      gap: 12px;
+      white-space: nowrap;
+    }
+    .btn {
+      padding: 10px 16px;
+      border-radius: 6px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .btn-primary {
+      background: #1a5bb8;
+      color: white;
+      border: none;
+    }
+    .btn-primary:hover { background: #144a99; }
+    .btn-reset {
+      background: #e5e7eb;
+      color: #374151;
+    }
+    .btn-reset:hover { background: #d1d5db; }
+
+  
+    .page-header {
+      max-width: 1200px;
+      margin: 24px auto;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .page-header h2 {
+      margin: 0;
+      font-size: 1.8rem;
+    }
+    .stats {
+      max-width: 1200px;
+      margin: 16px auto 0;
+      padding: 0 24px;
+      font-size: 1.1rem;
+      color: #444;
+    }
+    .count {
+      font-weight: 600;
+      color: #1a5bb8;
+    }
+
+  
     .grid {
       padding: 20px;
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 20px;
-      max-width: 1100px;
-      margin: 0 auto;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+      max-width: 1200px;
+      margin: 0 auto 60px;
     }
-
-    @media (min-width: 800px) {
-      .grid {
-        grid-template-columns: repeat(3, 1fr);  
-      }
-    }
-
     .card {
       background: white;
-      border: 1px solid #ddd;
-      border-radius: 6px;
+      border-radius: 10px;
       overflow: hidden;
       display: flex;
       flex-direction: column;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      transition: transform 0.18s, box-shadow 0.18s;
     }
-
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 28px rgba(0,0,0,0.12);
+    }
     .thumb {
       width: 100%;
       aspect-ratio: 2 / 3;
       object-fit: contain;
       background: #f8f8e8;
     }
-
-
+    .no-thumb {
+      aspect-ratio: 2 / 3;
+      background: #f8f8e8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #777;
+      font-style: italic;
+    }
     .card-body {
       padding: 12px;
       flex-grow: 1;
+      text-align: center;
     }
-
     .title {
       margin: 0 0 6px 0;
       font-size: 1.1rem;
       font-weight: 600;
     }
-
     .date {
       color: #555;
       font-size: 0.95rem;
     }
-
     .open-pdf {
       background: #0066cc;
       color: white;
@@ -61,84 +195,122 @@
       padding: 10px;
       text-decoration: none;
       font-weight: bold;
+      display: block;
     }
 
+    /* Mobile responsive */
+    @media (max-width: 768px) {
+      .nav-container {
+        flex-direction: column;
+        height: auto;
+        padding: 16px 20px;
+      }
+      .nav-links {
+        margin-top: 12px;
+        gap: 20px;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+      .filter-form {
+        flex-direction: column;
+      }
+      .filter-group {
+        width: 100%;
+      }
+      .filter-actions {
+        width: 100%;
+        justify-content: stretch;
+      }
+      .btn {
+        flex: 1;
+      }
+      .grid {
+        gap: 20px;
+        padding: 16px;
+      }
+    }
   </style>
 </head>
 <body>
 
-<nav>
-  <a href="/" class="nav-brand">Nepal Archive</a>
-  <div class="nav-links">
-    <a href="/portals">Portals</a>
-    <a href="/papers" >E-Papers</a>
-    <a href="/socials">socials</a>
-  </div>
-  <hr>
-</nav>
-
-
-<form method="GET" action="/papers">
-  <div>
-    <div>
-      <label>Date</label>
-      <input type="date" name="date" value="{{ selected_date }}" max="{{ today }}">
-    </div>
-    <div>
-      <label>Language</label>
-      <select name="lang">
-        <option value="">All languages</option>
-        <option value="np" {% if selected_lang == 'np' %}selected{% endif %}>नेपाली</option>
-        <option value="en" {% if selected_lang == 'en' %}selected{% endif %}>English</option>
-      </select>
-    </div>
-    <div>
-      <label>Newspaper</label>
-      <select name="paper">
-        <option value="">All papers</option>
-        {% for key, pname in newspapers.items() %}
-        <option value="{{ key }}" {% if selected_paper == key %}selected{% endif %}>{{ pname }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div>
-      <button type="submit">Filter</button>
-      <a href="/papers">Reset</a>
-    </div>
-  </div>
-</form>
-<hr>
-
-<div class="stats">
-  <span class="count">{{ rows | length }}</span>
-  e-paper{{ 's' if rows | length != 1 else '' }} found
-</div>
-
-<div class="grid">
-  {% if rows %}
-    {% for row in rows %}
-    <div class="card">
-      {% if row['thumb_filename'] %}
-        <img src="/papers/thumbnails/{{ row['thumb_filename'] }}" alt="Front page" loading="lazy">
-      {% else %}
-        <div>No preview</div>
-      {% endif %}
-      <div class="card-body">
-        <h3 class="title">{{ row['newspaper_name'] }}</h3>
-        <div class="date">{{ row['issue_date'] }}</div>
+  <nav class="main-nav">
+    <div class="nav-container">
+      <a href="/" class="nav-brand">Nepal Archive</a>
+      <div class="nav-links">
+        <a href="/portals" class="nav-item {% if request.path == '/portals' %}active{% endif %}">Portals</a>
+        <a href="/papers"  class="nav-item {% if request.path == '/papers' %}active{% endif %}">E-Papers</a>
+        <a href="/socials" class="nav-item {% if request.path == '/socials' %}active{% endif %}">Socials</a>
       </div>
-      <a href="/papers/pdf/{{ row['pdf_filename'] }}" target="_blank" class="open-pdf">
-        Open PDF
-      </a>
     </div>
-    {% endfor %}
-  {% else %}
-    <div>
-      <h3>No e-papers found</h3>
-      <p>Try different date or filters.</p>
-    </div>
-  {% endif %}
-</div>
+  </nav>
+
+  <div class="filter-bar">
+    <form method="GET" action="/papers" class="filter-form">
+      <div class="filter-group">
+        <label for="date">Date</label>
+        <input type="date" id="date" name="date" value="{{ selected_date }}" max="{{ today }}">
+      </div>
+
+      <div class="filter-group">
+        <label for="lang">Language</label>
+        <select id="lang" name="lang">
+          <option value="">All languages</option>
+          <option value="np" {% if selected_lang == 'np' %}selected{% endif %}>नेपाली</option>
+          <option value="en" {% if selected_lang == 'en' %}selected{% endif %}>English</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="paper">Newspaper</label>
+        <select id="paper" name="paper">
+          <option value="">All papers</option>
+          {% for key, pname in newspapers.items() %}
+          <option value="{{ key }}" {% if selected_paper == key %}selected{% endif %}>{{ pname }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="filter-actions">
+        <button type="submit" class="btn btn-primary">Filter</button>
+        <a href="/papers" class="btn btn-reset">Reset</a>
+      </div>
+    </form>
+  </div>
+
+  <div class="page-header">
+    <h2>E-Papers — {{ selected_date }}</h2>
+  </div>
+
+  <div class="stats">
+    <span class="count">{{ rows | length }}</span>
+    e-paper{{ 's' if rows | length != 1 else '' }} found
+  </div>
+
+  <div class="grid">
+    {% if rows %}
+      {% for row in rows %}
+      <div class="card">
+        {% if row['thumb_filename'] %}
+          <img src="/papers/thumbnails/{{ row['thumb_filename'] }}" alt="Front page" class="thumb" loading="lazy">
+        {% else %}
+          <div class="no-thumb">No preview</div>
+        {% endif %}
+        <div class="card-body">
+          <h3 class="title">{{ row['newspaper_name'] }}</h3>
+          <div class="date">{{ row['issue_date'] }}</div>
+        </div>
+        <a href="/papers/pdf/{{ row['pdf_filename'] }}" target="_blank" class="open-pdf">
+          Open PDF
+        </a>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: #666;">
+        <h3>No e-papers found</h3>
+        <p>Try different date or filters.</p>
+      </div>
+    {% endif %}
+  </div>
 
 </body>
 </html>
