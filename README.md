@@ -2,7 +2,9 @@
 
 **Nepal Media Archive** is a project that collects and stores Nepali media content daily.
 
-Website: https://archive.kushal-kc.com.np
+## Website
+
+[![Visit Website](https://image.thum.io/get/width/1200/https://archive.kushal-kc.com.np)](https://archive.kushal-kc.com.np)
 
 ## Overview
 
