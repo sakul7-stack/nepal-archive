@@ -267,7 +267,8 @@ def portals():
         SELECT hs.snapshot_id, hs.scrape_datetime, hs.thumbnail_filename,
                p.portal_key, p.portal_name, p.language,
                a.article_id, a.article_url, a.title,
-               a.summary_en, a.summary_np
+               a.summary_en, a.summary_np,
+	       a.keywords_en, a.keywords_np
         FROM headline_snapshots hs
         JOIN portals p ON p.portal_key = hs.portal_key
         JOIN articles a ON a.article_id = hs.article_id
@@ -298,7 +299,9 @@ def portals():
                 **dict(r),
                 "title": escape(r["title"]),
                 "summary_en": escape(r["summary_en"]) if r["summary_en"] else "",
-                "summary_np": escape(r["summary_np"]) if r["summary_np"] else ""
+                "summary_np": escape(r["summary_np"]) if r["summary_np"] else "",
+                "keywords_en": escape(r["keywords_en"]) if r["keywords_en"] else "",
+                "keywords_np": escape(r["keywords_np"]) if r["keywords_np"] else ""
             }
             for r in c.fetchall()
         ]
@@ -326,3 +329,4 @@ def handle_error(e):
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8001, debug=False)
+

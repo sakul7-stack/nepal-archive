@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
     <title>Nepal Portal Archive</title>
     <style>
         * { box-sizing: border-box; margin:0; padding:0; }
@@ -271,8 +273,12 @@
                 {% else %}<p class="no-summary">नेपाली सारांश छैन</p>{% endif %}
             </div>
           
-            {% set kw = row.keywords_en or row.keywords_np %}
-            {% if kw %}<p class="card-keywords"><b>Keywords:</b> {{ kw }}</p>{% endif %}
+            {% if row.keywords_en %}
+<p class="card-keywords tab-panel active" id="kw-{{ loop.index }}-en"><b>Keywords:</b> {{ row.keywords_en }}</p>
+{% endif %}
+{% if row.keywords_np %}
+<p class="card-keywords tab-panel" id="kw-{{ loop.index }}-np"><b>Keywords:</b> {{ row.keywords_np }}</p>
+{% endif %}
         </div>
     </div>
     {% endfor %}
@@ -285,15 +291,23 @@
 
 <script>
 function switchTab(idx, lang, btn) {
+    // toggle summaries
     document.querySelectorAll(`#tab-${idx}-en, #tab-${idx}-np`).forEach(p => p.classList.remove('active'));
-    document.querySelectorAll(`[onclick*="switchTab('${idx}'"]`).forEach(b => b.classList.remove('active'));
     document.getElementById(`tab-${idx}-${lang}`).classList.add('active');
+
+    // toggle keywords
+    document.querySelectorAll(`#kw-${idx}-en, #kw-${idx}-np`).forEach(p => p.classList.remove('active'));
+    const kwPanel = document.getElementById(`kw-${idx}-${lang}`);
+    if (kwPanel) kwPanel.classList.add('active');
+
+    // toggle buttons
+    document.querySelectorAll(`[onclick*="switchTab('${idx}'"]`).forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
 }
-
 document.addEventListener('DOMContentLoaded', () => {
     updateAllButtons();
 });
 </script>
 </body>
 </html>
+
