@@ -130,8 +130,11 @@ def socials():
     conn = get_db(SOCIAL_DB_PATH)
     c = conn.cursor()
 
-    date_str = validate_date(request.args.get('date', '')) or \
-               (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
+    date_str = validate_date(request.args.get('date', ''))
+    if not date_str:
+        row=c.execute('SELECT MAX(archive_date) as max_date FROM archive_dates').fetchone()
+        date_str=row['max_date']
+              
 
     platform_rows = c.execute(
         "SELECT platform_id, platform_name FROM platforms"
@@ -188,8 +191,11 @@ def papers():
     conn = get_db(PAPER_DB_PATH)
     c = conn.cursor()
 
-    date_str = validate_date(request.args.get('date', '')) or \
-               (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
+    date_str = validate_date(request.args.get('date', ''))
+
+    if not date_str:
+        row = c.execute("SELECT MAX(issue_date) as max_date FROM issues").fetchone()
+        date_str = row["max_date"]
 
     newspaper_rows = c.execute(
         "SELECT key, name, language FROM newspapers"
@@ -251,8 +257,11 @@ def portals():
     c = conn.cursor()
 
     search = sanitize_search(request.args.get('q', ''))
-    date_str = validate_date(request.args.get('date', '')) or \
-               (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
+    date_str = validate_date(request.args.get('date', ''))
+
+    if not date_str:
+        row = c.execute("SELECT MAX(DATE(scrape_datetime)) as max_date FROM headline_snapshots").fetchone()
+        date_str = row["max_date"]
 
     portal_rows = c.execute(
         "SELECT portal_key, portal_name FROM portals WHERE is_active = 1"
