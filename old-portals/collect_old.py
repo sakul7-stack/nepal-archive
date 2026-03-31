@@ -88,7 +88,7 @@ while current <= end_date:
     print(f"\nProcessing {pretty_date}")
 
     for site_name, domain in SITES.items():
-        print(f"  🔎 {site_name}...", end="")
+        print(f"   {site_name}...", end="")
         snapshots = get_snapshots(domain, date_str)
 
         if not snapshots:
