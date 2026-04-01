@@ -330,6 +330,192 @@ def portals():
         today=datetime.now().strftime("%Y-%m-%d"),
     )
 
+"""
+Add this route to your existing app.py
+Also add 'search' to your nav links in all templates.
+"""
+@app.route('/search')
+def search():
+    from math import ceil
+    import unicodedata
+
+
+    raw_q     = request.args.get('q', '').strip()
+    q         = sanitize_search(raw_q)
+    date_from = validate_date(request.args.get('from', ''))
+    date_to   = validate_date(request.args.get('to',   ''))
+
+    raw_sources     = request.args.getlist('source')
+    allowed_sources = {'papers', 'portals', 'socials'}
+    sources = [s for s in raw_sources if s in allowed_sources] or list(allowed_sources)
+
+    try:    page_papers  = max(1, int(request.args.get('pp', 1)))
+    except: page_papers  = 1
+    try:    page_portals = max(1, int(request.args.get('po', 1)))
+    except: page_portals = 1
+    try:    page_socials = max(1, int(request.args.get('ps', 1)))
+    except: page_socials = 1
+
+    PER_PAGE = 12
+
+    paper_results  = []
+    portal_results = []
+    social_results = []
+
+    searched = bool(q or date_from or date_to)
+
+    if searched:
+
+        def date_clause(col):
+            parts, vals = [], []
+            if date_from:
+                parts.append(f"{col} >= ?")
+                vals.append(date_from)
+            if date_to:
+                parts.append(f"{col} <= ?")
+                vals.append(date_to)
+            return (" AND " + " AND ".join(parts)) if parts else "", vals
+
+        like = f"%{q}%" if q else None
+
+
+        if 'papers' in sources:
+            try:
+                conn = get_db(PAPER_DB_PATH)
+                dc, dv = date_clause("i.issue_date")
+                qc = " AND (n.name LIKE ?)" if like else ""
+                qv = [like] if like else []
+                sql = f"""
+                    SELECT
+                        n.name           AS title,
+                        n.language       AS language,
+                        n.name           AS source_name,
+                        i.issue_date     AS result_date,
+                        f.thumbnail_path AS thumb_path,
+                        f.pdf_path       AS pdf_path
+                    FROM newspapers n
+                    JOIN issues i ON i.newspaper_id = n.id
+                    JOIN files   f ON f.issue_id    = i.id
+                    WHERE 1=1 {dc} {qc}
+                    ORDER BY i.issue_date DESC
+                """
+                rows = conn.execute(sql, dv + qv).fetchall()
+                for r in rows:
+                    d = dict(r)
+                    d['thumb_filename'] = os.path.basename(d['thumb_path']) if d.get('thumb_path') else None
+                    d['pdf_filename']   = os.path.basename(d['pdf_path'])   if d.get('pdf_path')   else None
+                    d['title']          = str(escape(d.get('title') or ''))
+                    paper_results.append(d)
+                conn.close()
+            except Exception as e:
+                print("Search papers error:", e)
+
+        if 'portals' in sources:
+            try:
+                conn = get_db(PORTAL_DB_PATH)
+                dc, dv = date_clause("DATE(hs.scrape_datetime)")
+                qc = " AND (a.title LIKE ? OR a.summary_en LIKE ? OR a.summary_np LIKE ?)" if like else ""
+                qv = [like, like, like] if like else []
+                sql = f"""
+                    SELECT
+                        a.title                  AS title,
+                        a.summary_en             AS summary_en,
+                        a.summary_np             AS summary_np,
+                        a.article_url            AS url,
+                        p.language               AS language,
+                        p.portal_name            AS source_name,
+                        DATE(hs.scrape_datetime) AS result_date,
+                        hs.scrape_datetime       AS scrape_datetime,
+                        hs.thumbnail_filename    AS thumb_filename
+                    FROM headline_snapshots hs
+                    JOIN portals  p ON p.portal_key = hs.portal_key
+                    JOIN articles a ON a.article_id = hs.article_id
+                    WHERE p.is_active = 1 {dc} {qc}
+                    ORDER BY hs.scrape_datetime DESC
+                """
+                rows = conn.execute(sql, dv + qv).fetchall()
+                for r in rows:
+                    d = dict(r)
+                    d['title']      = str(escape(d.get('title')      or ''))
+                    d['summary_en'] = str(escape(d.get('summary_en') or ''))
+                    d['summary_np'] = str(escape(d.get('summary_np') or ''))
+                    portal_results.append(d)
+                conn.close()
+            except Exception as e:
+                print("Search portals error:", e)
+
+        if 'socials' in sources:
+            try:
+                conn = get_db(SOCIAL_DB_PATH)
+                dc, dv = date_clause("ad.archive_date")
+                qc = " AND (sp.title LIKE ?)" if like else ""
+                qv = [like] if like else []
+                sql = f"""
+                    SELECT
+                        sp.title             AS title,
+                        sp.link              AS url,
+                        p.platform_name      AS source_name,
+                        ad.archive_date      AS result_date,
+                        mf.file_path         AS thumb_path
+                    FROM social_posts sp
+                    JOIN platforms     p  ON p.platform_id        = sp.platform_id
+                    JOIN archive_dates ad ON ad.archive_date_id   = sp.archive_date_id
+                    LEFT JOIN media_files mf ON mf.post_id        = sp.post_id
+                    WHERE 1=1 {dc} {qc}
+                    ORDER BY ad.archive_date DESC, sp.created_at DESC
+                """
+                rows = conn.execute(sql, dv + qv).fetchall()
+                for r in rows:
+                    d = dict(r)
+                    d['thumb_filename'] = os.path.basename(d['thumb_path']) if d.get('thumb_path') else None
+                    d['title']          = str(escape(d.get('title') or ''))
+                    social_results.append(d)
+                conn.close()
+            except Exception as e:
+                print("Search socials error:", e)
+
+    def paginate(items, page, per_page):
+        total       = len(items)
+        total_pages = ceil(total / per_page) if total else 1
+        page        = min(max(1, page), total_pages)
+        offset      = (page - 1) * per_page
+        return items[offset:offset + per_page], total, total_pages, page
+
+    paper_page,  paper_total,  paper_pages,  page_papers  = paginate(paper_results,  page_papers,  PER_PAGE)
+    portal_page, portal_total, portal_pages, page_portals = paginate(portal_results, page_portals, PER_PAGE)
+    social_page, social_total, social_pages, page_socials = paginate(social_results, page_socials, PER_PAGE)
+
+    has_nepali = False
+    if raw_q:
+        try:
+            has_nepali = any(
+                '\u0900' <= c <= '\u097F' for c in raw_q
+            )
+        except Exception:
+            has_nepali = False
+
+    return render_template(
+        'search.html',
+        paper_results  = paper_page,
+        paper_total    = paper_total,
+        paper_pages    = paper_pages,
+        page_papers    = page_papers,
+        portal_results = portal_page,
+        portal_total   = portal_total,
+        portal_pages   = portal_pages,
+        page_portals   = page_portals,
+        social_results = social_page,
+        social_total   = social_total,
+        social_pages   = social_pages,
+        page_socials   = page_socials,
+        searched       = searched,
+        search_query   = raw_q,
+        date_from      = date_from or '',
+        date_to        = date_to   or '',
+        selected_sources = sources,
+        has_nepali     = has_nepali,
+        today          = datetime.now().strftime('%Y-%m-%d'),
+    )
 
 @app.errorhandler(Exception)
 def handle_error(e):
@@ -338,4 +524,3 @@ def handle_error(e):
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8001, debug=False)
-

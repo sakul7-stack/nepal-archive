@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Search — Nepal Archive</title>
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacOSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f8f9fa;
+      color: #16213e;
+      line-height: 1.6;
+    }
+
+    .main-nav {
+      background: #ffffff;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      height: 64px;
+    }
+    .nav-brand { font-size:1.5rem; font-weight:700; color:#1a5bb8; text-decoration:none; }
+    .nav-links  { display:flex; gap:32px; }
+    .nav-item   { color:#333; text-decoration:none; font-weight:500; transition:color .2s; }
+    .nav-item:hover, .nav-item.active { color:#1a5bb8; }
+
+    .filter-bar {
+      background: #f8f9fc;
+      border-bottom: 1px solid #e0e4ed;
+      padding: 16px 24px;
+    }
+    .filter-form {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: flex-end;
+    }
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      min-width: 140px;
+      flex: 1;
+    }
+    .filter-group label {
+      font-size: 0.85rem;
+      margin-bottom: 6px;
+      color: #555;
+      font-weight: 500;
+    }
+    .filter-group input,
+    .filter-group select {
+      padding: 10px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      background: white;
+      color: #16213e;
+    }
+    .filter-group input:focus,
+    .filter-group select:focus {
+      outline: none;
+      border-color: #1a5bb8;
+      box-shadow: 0 0 0 2px rgba(26,91,184,0.12);
+    }
+  
+    .fg-search { flex: 3; min-width: 220px; }
+
+ 
+    .fg-sources { flex: none; }
+    .fg-sources label.fg-label {
+      font-size: 0.85rem;
+      margin-bottom: 6px;
+      color: #555;
+      font-weight: 500;
+      display: block;
+    }
+    .source-checks {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      padding: 10px 0;
+    }
+    .sc {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      font-size: 0.92rem;
+      color: #333;
+      font-weight: 500;
+    }
+    .sc input[type="checkbox"] {
+      width: 15px;
+      height: 15px;
+      cursor: pointer;
+      accent-color: #1a5bb8;
+    }
+
+    .filter-actions {
+      display: flex;
+      gap: 12px;
+      white-space: nowrap;
+    }
+    .btn {
+      padding: 10px 16px;
+      border-radius: 6px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: inline-block;
+      border: none;
+      font-size: 0.95rem;
+    }
+    .btn-primary { background: #1a5bb8; color: white; }
+    .btn-primary:hover { background: #144a99; }
+    .btn-reset   { background: #e5e7eb; color: #374151; }
+    .btn-reset:hover { background: #d1d5db; }
+
+   
+    .page-header {
+      max-width: 1200px;
+      margin: 24px auto 0;
+      padding: 0 24px;
+    }
+    .page-header h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #16213e;
+    }
+
+   
+    .section {
+      max-width: 1200px;
+      margin: 28px auto 0;
+      padding: 0 24px;
+    }
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding-top: 16px;
+      border-top: 3px solid #1a5bb8;
+    }
+    .section-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #1a5bb8;
+    }
+    .section-count {
+      font-size: .88rem;
+      color: #666;
+      font-weight: 400;
+      margin-left: 8px;
+    }
+    .section-pageinfo {
+      font-size: .85rem;
+      color: #666;
+    }
+
+    
+    .slider-wrap { position: relative; }
+    .slider-rail {
+      display: flex;
+      gap: 16px;
+      overflow-x: auto;
+      scroll-behavior: smooth;
+      padding-bottom: 10px;
+      scrollbar-width: thin;
+      scrollbar-color: #d1d5db transparent;
+    }
+    .slider-rail::-webkit-scrollbar { height: 5px; }
+    .slider-rail::-webkit-scrollbar-thumb { background:#d1d5db; border-radius:3px; }
+
+    .slider-arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-60%);
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      z-index: 5;
+      background: #fff;
+      color: #1a5bb8;
+      box-shadow: 0 2px 8px rgba(0,0,0,.18);
+      transition: box-shadow .2s;
+    }
+    .slider-arrow:hover { box-shadow: 0 4px 14px rgba(0,0,0,.25); }
+    .slider-arrow.left  { left: -17px; }
+    .slider-arrow.right { right: -17px; }
+
+ 
+    .paper-card {
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 2px 12px rgba(0,0,0,.08);
+      transition: transform .18s, box-shadow .18s;
+      min-width: 200px;
+      max-width: 200px;
+      flex-shrink: 0;
+    }
+    .paper-card:hover { transform:translateY(-4px); box-shadow:0 12px 28px rgba(0,0,0,.12); }
+    .paper-card .thumb {
+      width:100%; aspect-ratio:2/3; object-fit:contain; background:#f8f8e8;
+    }
+    .paper-card .no-thumb {
+      aspect-ratio:2/3; background:#f8f8e8; display:flex;
+      align-items:center; justify-content:center; color:#777; font-style:italic; font-size:.85rem;
+    }
+    .paper-card .card-body { padding:10px; flex-grow:1; text-align:center; }
+    .paper-card .card-body .title { margin:0 0 4px; font-size:.95rem; font-weight:600; }
+    .paper-card .card-body .date  { color:#555; font-size:.85rem; }
+    .paper-card .open-pdf {
+      background:#0066cc; color:white; text-align:center;
+      padding:8px; text-decoration:none; font-weight:bold;
+      display:block; font-size:.9rem;
+    }
+
+
+    .portal-card {
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+      display: flex;
+      flex-direction: column;
+      min-width: 300px;
+      max-width: 300px;
+      flex-shrink: 0;
+      transition: transform .15s, box-shadow .15s;
+    }
+    .portal-card:hover { transform:translateY(-3px); box-shadow:0 8px 22px rgba(0,0,0,.11); }
+    .portal-card .card-img {
+      width:100%; height:140px; object-fit:cover; background:#e5e7eb;
+    }
+    .portal-card .card-no-img {
+      height:140px; background:#e5e7eb; display:grid;
+      place-items:center; color:#9ca3af; font-size:.85rem;
+    }
+    .portal-card .card-body {
+      padding:12px; display:flex; flex-direction:column; gap:8px; flex-grow:1;
+    }
+    .portal-card .portal-tag  { color:#1d4ed8; font-weight:600; font-size:.88rem; }
+    .portal-card .lang-tag    {
+      font-weight:bold; padding:2px 5px; border-radius:3px;
+      background:#e5e7eb; font-size:.78rem; margin-left:4px;
+    }
+    .portal-card .card-date   { font-size:.78rem; color:#6b7280; float:right; }
+    .portal-card .card-title a {
+      color:#111827; text-decoration:none; font-size:.97rem;
+      font-weight:600; line-height:1.3;
+    }
+    .portal-card .card-title a:hover { color:#1d4ed8; text-decoration:underline; }
+    .portal-card .summary {
+      font-size:.88rem; color:#4b5563;
+      display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;
+    }
+    .portal-card .no-summary { color:#9ca3af; font-style:italic; font-size:.84rem; }
+    .portal-card .tab-buttons button {
+      padding:4px 10px; border:1px solid #d1d5db;
+      background:white; cursor:pointer; font-size:.8rem; border-radius:3px;
+    }
+    .portal-card .tab-buttons button.active {
+      background:#1d4ed8; color:white; border-color:#1d4ed8;
+    }
+    .portal-card .tab-panel        { display:none; }
+    .portal-card .tab-panel.active { display:block; }
+
+   
+    .social-card {
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,.08);
+      display: flex;
+      flex-direction: column;
+      transition: transform .18s, box-shadow .18s;
+      min-width: 260px;
+      max-width: 260px;
+      flex-shrink: 0;
+    }
+    .social-card:hover { transform:translateY(-4px); box-shadow:0 12px 28px rgba(0,0,0,.12); }
+    .social-card .card-thumb-wrap {
+      width:100%; height:170px; background:#dde0e8;
+      display:flex; align-items:center; justify-content:center; overflow:hidden;
+    }
+    .social-card .card-thumb-wrap img { width:100%; height:100%; object-fit:cover; }
+    .social-card .no-thumb { color:#777; font-style:italic; font-size:.85rem; }
+    .social-card .card-body {
+      padding:14px; flex-grow:1; display:flex; flex-direction:column; gap:6px;
+    }
+    .social-card .platform-tag { font-weight:600; color:#1a5bb8; font-size:.9rem; }
+    .social-card .card-title   { font-size:.95rem; font-weight:600; color:#111; }
+    .social-card .card-date    { font-size:.82rem; color:#888; }
+    .social-card .card-link {
+      background:#0066cc; color:white; text-align:center;
+      padding:9px; text-decoration:none; font-weight:bold;
+      display:block; font-size:.9rem;
+    }
+
+  
+    .section-pagination {
+      display:flex; justify-content:flex-end; align-items:center;
+      gap:6px; margin-top:12px; flex-wrap:wrap;
+    }
+    .pg-btn {
+      padding:6px 12px; border-radius:6px; font-size:.85rem; font-weight:500;
+      text-decoration:none; border:1px solid #d1d5db; background:white; color:#333;
+      transition:all .15s;
+    }
+    .pg-btn:hover              { background:#e8f0fe; border-color:#1a5bb8; color:#1a5bb8; }
+    .pg-btn.active             { background:#1a5bb8; color:white; border-color:#1a5bb8; }
+    .pg-btn.disabled           { opacity:.4; pointer-events:none; }
+    .page-ellipsis             { padding:6px 2px; color:#999; font-size:.85rem; }
+    .empty-section {
+      padding:36px 20px; text-align:center; color:#888;
+      background:white; border-radius:8px;
+      box-shadow:0 1px 4px rgba(0,0,0,.06);
+      font-size:.95rem;
+    }
+    .prompt-state {
+      text-align:center; padding:100px 20px 60px; color:#666;
+    }
+    .prompt-state h3 { font-size:1.4rem; margin-bottom:8px; color:#444; }
+    .prompt-state p  { font-size:1rem; }
+
+    /* bottom spacing */
+    .page-end { height: 60px; }
+
+   
+    @media (max-width: 768px) {
+      .nav-container { flex-direction:column; height:auto; padding:16px 20px; }
+      .nav-links     { margin-top:12px; gap:20px; justify-content:center; flex-wrap:wrap; }
+      .filter-form   { flex-direction:column; }
+      .filter-group, .fg-search, .fg-sources { width:100%; flex:none; }
+      .filter-actions { width:100%; }
+      .btn { flex:1; text-align:center; }
+      .slider-arrow  { display:none; }
+    }
+  </style>
+</head>
+<body>
+
+
+  <nav class="main-nav">
+    <div class="nav-container">
+      <a href="/" class="nav-brand">Nepal Archive</a>
+      <div class="nav-links">
+        <a href="/portals" class="nav-item {% if request.path == '/portals' %}active{% endif %}">Portals</a>
+        <a href="/papers"  class="nav-item {% if request.path == '/papers'  %}active{% endif %}">E-Papers</a>
+        <a href="/socials" class="nav-item {% if request.path == '/socials' %}active{% endif %}">Socials</a>
+        <a href="/search"  class="nav-item {% if request.path == '/search'  %}active{% endif %}">Search</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="filter-bar">
+    <form method="GET" action="/search" class="filter-form">
+
+      <div class="filter-group fg-search">
+        <label for="q">Search</label>
+        <input
+          type="search"
+          id="q"
+          name="q"
+          placeholder="Headlines, newspapers, posts…"
+          value="{{ search_query }}"
+          autofocus
+        >
+      </div>
+
+      <div class="filter-group">
+        <label for="from">From date</label>
+        <input type="date" id="from" name="from" value="{{ date_from }}" max="{{ today }}">
+      </div>
+
+      <div class="filter-group">
+        <label for="to">To date</label>
+        <input type="date" id="to" name="to" value="{{ date_to }}" max="{{ today }}">
+      </div>
+
+      <div class="filter-group fg-sources">
+        <label class="fg-label">Search in</label>
+        <div class="source-checks">
+          <label class="sc">
+            <input type="checkbox" name="source" value="papers"
+              {% if 'papers' in selected_sources %}checked{% endif %}>
+            <span>E-Papers</span>
+          </label>
+          <label class="sc">
+            <input type="checkbox" name="source" value="portals"
+              {% if 'portals' in selected_sources %}checked{% endif %}>
+            <span>Portals</span>
+          </label>
+          <label class="sc">
+            <input type="checkbox" name="source" value="socials"
+              {% if 'socials' in selected_sources %}checked{% endif %}>
+            <span>Socials</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="filter-actions">
+        <button type="submit" class="btn btn-primary">Search</button>
+        <a href="/search" class="btn btn-reset">Reset</a>
+      </div>
+
+    </form>
+  </div>
+
+  {% if searched %}
+
+  <div class="page-header">
+    <h2>
+      {% if search_query %}Results for &ldquo;{{ search_query }}&rdquo;{% else %}Search Results{% endif %}
+      {% if date_from or date_to %}
+        <span style="font-weight:400;font-size:1rem;color:#555;">
+          &nbsp;
+          {% if date_from %}from {{ date_from }}{% endif %}
+          {% if date_to %} to {{ date_to }}{% endif %}
+        </span>
+      {% endif %}
+    </h2>
+  </div>
+
+  {# ── Base query string for pagination links ── #}
+  {% set bq = '?q=' ~ search_query ~ '&from=' ~ date_from ~ '&to=' ~ date_to %}
+  {% for s in selected_sources %}{% set bq = bq ~ '&source=' ~ s %}{% endfor %}
+
+
+  {% if 'papers' in selected_sources %}
+  <div class="section">
+    <div class="section-header">
+      <div>
+        <span class="section-title">E-Papers</span>
+        <span class="section-count">{{ paper_total }} result{{ 's' if paper_total != 1 else '' }}</span>
+      </div>
+      {% if paper_pages > 1 %}
+      <span class="section-pageinfo">Page {{ page_papers }} / {{ paper_pages }}</span>
+      {% endif %}
+    </div>
+
+    {% if paper_results %}
+    <div class="slider-wrap">
+      <button class="slider-arrow left"  onclick="scroll_rail('paperRail',-1)" aria-label="Previous">&#8249;</button>
+      <div class="slider-rail" id="paperRail">
+        {% for r in paper_results %}
+        <div class="paper-card">
+          {% if r.thumb_filename %}
+            <img src="/papers/thumbnails/{{ r.thumb_filename }}" alt="Front page" class="thumb" loading="lazy">
+          {% else %}
+            <div class="no-thumb">No preview</div>
+          {% endif %}
+          <div class="card-body">
+            <h3 class="title">{{ r.title }}</h3>
+            <div class="date">{{ r.result_date }}</div>
+            {% if r.language %}
+            <div style="font-size:.78rem;color:#888;margin-top:2px;">
+              {{ 'Nepali' if r.language == 'np' else 'English' }}
+            </div>
+            {% endif %}
+          </div>
+          {% if r.pdf_filename %}
+          <a href="/papers/pdf/{{ r.pdf_filename }}" target="_blank" class="open-pdf">Open PDF</a>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      <button class="slider-arrow right" onclick="scroll_rail('paperRail', 1)" aria-label="Next">&#8250;</button>
+    </div>
+
+    {% if paper_pages > 1 %}
+    <div class="section-pagination">
+      {% if page_papers > 1 %}
+        <a href="{{ bq }}&pp={{ page_papers - 1 }}&po={{ page_portals }}&ps={{ page_socials }}" class="pg-btn">Prev</a>
+      {% else %}
+        <span class="pg-btn disabled">Prev</span>
+      {% endif %}
+      {% for p in range(1, paper_pages + 1) %}
+        {% if p == 1 or p == paper_pages or (p >= page_papers - 2 and p <= page_papers + 2) %}
+          <a href="{{ bq }}&pp={{ p }}&po={{ page_portals }}&ps={{ page_socials }}"
+             class="pg-btn {% if p == page_papers %}active{% endif %}">{{ p }}</a>
+        {% elif p == page_papers - 3 or p == page_papers + 3 %}
+          <span class="page-ellipsis">&hellip;</span>
+        {% endif %}
+      {% endfor %}
+      {% if page_papers < paper_pages %}
+        <a href="{{ bq }}&pp={{ page_papers + 1 }}&po={{ page_portals }}&ps={{ page_socials }}" class="pg-btn">Next</a>
+      {% else %}
+        <span class="pg-btn disabled">Next</span>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="empty-section">No e-papers found for this search.</div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+
+  {% if 'portals' in selected_sources %}
+  <div class="section">
+    <div class="section-header">
+      <div>
+        <span class="section-title">Portal Headlines</span>
+        <span class="section-count">{{ portal_total }} result{{ 's' if portal_total != 1 else '' }}</span>
+      </div>
+      {% if portal_pages > 1 %}
+      <span class="section-pageinfo">Page {{ page_portals }} / {{ portal_pages }}</span>
+      {% endif %}
+    </div>
+
+    {% if portal_results %}
+    <div class="slider-wrap">
+      <button class="slider-arrow left"  onclick="scroll_rail('portalRail',-1)" aria-label="Previous">&#8249;</button>
+      <div class="slider-rail" id="portalRail">
+        {% for r in portal_results %}
+        <div class="portal-card">
+          {% if r.thumb_filename %}
+            <img class="card-img" src="/portals/thumbnails/{{ r.thumb_filename }}" alt="thumbnail" loading="lazy">
+          {% else %}
+            <div class="card-no-img">No image</div>
+          {% endif %}
+          <div class="card-body">
+            <div>
+              <span class="portal-tag">{{ r.source_name }}</span>
+              <span class="lang-tag">{{ 'NP' if r.language == 'np' else 'EN' }}</span>
+              <span class="card-date">{{ r.result_date }}</span>
+            </div>
+            <div class="card-title">
+              <a href="{{ r.url }}" target="_blank" rel="noopener">
+                {{ r.title or r.source_name }}
+              </a>
+            </div>
+            {% set default_lang = 'np' if has_nepali else 'en' %}
+            <div class="tab-buttons">
+              <button class="{% if default_lang == 'en' %}active{% endif %}"
+                      onclick="ptab('{{ loop.index }}','en',this)">English</button>
+              <button class="{% if default_lang == 'np' %}active{% endif %}"
+                      onclick="ptab('{{ loop.index }}','np',this)">&#2344;&#2375;&#2346;&#2366;&#2354;&#2368;</button>
+            </div>
+            <div class="tab-panel {% if default_lang == 'en' %}active{% endif %}" id="ptab-{{ loop.index }}-en">
+              {% if r.summary_en %}<p class="summary">{{ r.summary_en }}</p>
+              {% else %}<p class="no-summary">No English summary</p>{% endif %}
+            </div>
+            <div class="tab-panel {% if default_lang == 'np' %}active{% endif %}" id="ptab-{{ loop.index }}-np">
+              {% if r.summary_np %}<p class="summary">{{ r.summary_np }}</p>
+              {% else %}<p class="no-summary">&#2344;&#2375;&#2346;&#2366;&#2354;&#2368; &#2360;&#2366;&#2352;&#2366;&#2306;&#2358; &#2331;&#2376;&#2344;</p>{% endif %}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      <button class="slider-arrow right" onclick="scroll_rail('portalRail', 1)" aria-label="Next">&#8250;</button>
+    </div>
+
+    {% if portal_pages > 1 %}
+    <div class="section-pagination">
+      {% if page_portals > 1 %}
+        <a href="{{ bq }}&pp={{ page_papers }}&po={{ page_portals - 1 }}&ps={{ page_socials }}" class="pg-btn">Prev</a>
+      {% else %}
+        <span class="pg-btn disabled">Prev</span>
+      {% endif %}
+      {% for p in range(1, portal_pages + 1) %}
+        {% if p == 1 or p == portal_pages or (p >= page_portals - 2 and p <= page_portals + 2) %}
+          <a href="{{ bq }}&pp={{ page_papers }}&po={{ p }}&ps={{ page_socials }}"
+             class="pg-btn {% if p == page_portals %}active{% endif %}">{{ p }}</a>
+        {% elif p == page_portals - 3 or p == page_portals + 3 %}
+          <span class="page-ellipsis">&hellip;</span>
+        {% endif %}
+      {% endfor %}
+      {% if page_portals < portal_pages %}
+        <a href="{{ bq }}&pp={{ page_papers }}&po={{ page_portals + 1 }}&ps={{ page_socials }}" class="pg-btn">Next</a>
+      {% else %}
+        <span class="pg-btn disabled">Next</span>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="empty-section">No portal articles found for this search.</div>
+    {% endif %}
+  </div>
+  {% endif %}
+  {% if 'socials' in selected_sources %}
+  <div class="section">
+    <div class="section-header">
+      <div>
+        <span class="section-title">Social Posts</span>
+        <span class="section-count">{{ social_total }} result{{ 's' if social_total != 1 else '' }}</span>
+      </div>
+      {% if social_pages > 1 %}
+      <span class="section-pageinfo">Page {{ page_socials }} / {{ social_pages }}</span>
+      {% endif %}
+    </div>
+
+    {% if social_results %}
+    <div class="slider-wrap">
+      <button class="slider-arrow left"  onclick="scroll_rail('socialRail',-1)" aria-label="Previous">&#8249;</button>
+      <div class="slider-rail" id="socialRail">
+        {% for r in social_results %}
+        <div class="social-card">
+          <div class="card-thumb-wrap">
+            {% if r.thumb_filename %}
+              <img src="/socials/thumbnails/{{ r.thumb_filename }}" alt="thumbnail" loading="lazy">
+            {% else %}
+              <div class="no-thumb">No preview</div>
+            {% endif %}
+          </div>
+          <div class="card-body">
+            <div class="platform-tag">{{ r.source_name }}</div>
+            <div class="card-title">{{ r.title or '&mdash;' }}</div>
+            <div class="card-date">{{ r.result_date }}</div>
+          </div>
+          {% if r.url %}
+          <a href="{{ r.url }}" target="_blank" class="card-link">Open Post</a>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      <button class="slider-arrow right" onclick="scroll_rail('socialRail', 1)" aria-label="Next">&#8250;</button>
+    </div>
+
+    {% if social_pages > 1 %}
+    <div class="section-pagination">
+      {% if page_socials > 1 %}
+        <a href="{{ bq }}&pp={{ page_papers }}&po={{ page_portals }}&ps={{ page_socials - 1 }}" class="pg-btn">Prev</a>
+      {% else %}
+        <span class="pg-btn disabled">Prev</span>
+      {% endif %}
+      {% for p in range(1, social_pages + 1) %}
+        {% if p == 1 or p == social_pages or (p >= page_socials - 2 and p <= page_socials + 2) %}
+          <a href="{{ bq }}&pp={{ page_papers }}&po={{ page_portals }}&ps={{ p }}"
+             class="pg-btn {% if p == page_socials %}active{% endif %}">{{ p }}</a>
+        {% elif p == page_socials - 3 or p == page_socials + 3 %}
+          <span class="page-ellipsis">&hellip;</span>
+        {% endif %}
+      {% endfor %}
+      {% if page_socials < social_pages %}
+        <a href="{{ bq }}&pp={{ page_papers }}&po={{ page_portals }}&ps={{ page_socials + 1 }}" class="pg-btn">Next</a>
+      {% else %}
+        <span class="pg-btn disabled">Next</span>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="empty-section">No social posts found for this search.</div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div class="prompt-state">
+    <h3>Search all Nepal archives</h3>
+    <p>Enter a keyword or pick a date range to search across newspapers, portals and social posts.</p>
+  </div>
+  {% endif %}
+
+  <div class="page-end"></div>
+
+  <script>
+
+    function scroll_rail(id, dir) {
+      const el = document.getElementById(id);
+      if (el) el.scrollBy({ left: dir * 320, behavior: 'smooth' });
+    }
+
+   
+    function ptab(idx, lang, btn) {
+      ['en','np'].forEach(l => {
+        const p = document.getElementById('ptab-' + idx + '-' + l);
+        if (p) p.classList.remove('active');
+      });
+      const target = document.getElementById('ptab-' + idx + '-' + lang);
+      if (target) target.classList.add('active');
+      btn.closest('.tab-buttons').querySelectorAll('button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+   
+    document.addEventListener('DOMContentLoaded', function() {
+      var boxes = document.querySelectorAll('input[name="source"]');
+      boxes.forEach(function(cb) {
+        cb.addEventListener('change', function() {
+          var checked = Array.from(boxes).filter(function(b) { return b.checked; });
+          if (checked.length === 0) cb.checked = true;
+        });
+      });
+    });
+  </script>
+
+</body>
+</html>
