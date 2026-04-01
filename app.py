@@ -330,10 +330,6 @@ def portals():
         today=datetime.now().strftime("%Y-%m-%d"),
     )
 
-"""
-Add this route to your existing app.py
-Also add 'search' to your nav links in all templates.
-"""
 @app.route('/search')
 def search():
     from math import ceil
